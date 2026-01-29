@@ -88,3 +88,14 @@ console.log('🎯 Jogo Parcial (sem desenho):', [
   ...doisMenos,
   ...dezSelecionados
 ]);
+import { analisarSequencias } from './desenho/sequencia.js';
+
+const jogoTeste = [
+  ...tresMais,
+  ...doisMenos,
+  ...dezSelecionados
+];
+
+const analiseSeq = analisarSequencias(jogoTeste);
+
+console.log('🔍 Análise de Sequência:', analiseSeq);
