@@ -51,3 +51,28 @@ export function selecionarDezNumeros(base20, faixasOrdenadas, faixas) {
 
   return selecionados;
 }
+
+/**
+ * Completa os 10 números usando zona média histórica
+ */
+export function complementarComHistorico(
+  selecionados,
+  base20,
+  zonasHistoricas
+) {
+  const { meio } = zonasHistoricas;
+
+  for (const n of meio) {
+    if (
+      base20.includes(n) &&
+      !selecionados.includes(n) &&
+      selecionados.length < 10
+    ) {
+      selecionados.push(n);
+    }
+
+    if (selecionados.length === 10) break;
+  }
+
+  return selecionados;
+}
