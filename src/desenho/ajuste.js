@@ -50,11 +50,14 @@ export function ajustarJogo({
 
       if (novaAnalise.maiorTamanho <= limiteSequencia) {
         return {
-          ajustado: true,
-          removido: remover,
-          adicionado: candidato,
-          jogo: jogoTeste
-        };
+            ajustado: true,
+            removido: remover,
+            adicionado: candidato,
+            jogo: jogoTeste
+                .map(n => Number(n))
+                .sort((a, b) => a - b)
+                .map(n => String(n).padStart(2, '0'))
+                };
       }
     }
   }
