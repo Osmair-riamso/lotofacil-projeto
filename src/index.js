@@ -150,3 +150,14 @@ const resultadoSimulacao = simularHistorico(bd, 200);
 console.log('📈 Máximo de acertos encontrado:', resultadoSimulacao.maxAcertos);
 console.table(resultadoSimulacao.estatisticas);
 
+// ===== FASE B — FATORAÇÃO =====
+import { criarGruposABCDE } from './fatoracao/grupos.js';
+import { gerarJogosFatorados } from './fatoracao/fatorador.js';
+
+const grupos = criarGruposABCDE(jogoFinal);
+const jogosFatorados = gerarJogosFatorados(grupos);
+
+console.log('\n🧩 Grupos ABCDE:', grupos);
+console.log('\n🧮 Jogos Fatorados:');
+console.table(jogosFatorados);
+
