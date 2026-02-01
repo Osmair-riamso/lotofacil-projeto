@@ -150,14 +150,23 @@ const resultadoSimulacao = simularHistorico(bd, 200);
 console.log('📈 Máximo de acertos encontrado:', resultadoSimulacao.maxAcertos);
 console.table(resultadoSimulacao.estatisticas);
 
-// ===== FASE B — FATORAÇÃO =====
+// ===== FASE B — FATORAÇÃO REAL =====
 import { criarGruposABCDE } from './fatoracao/grupos.js';
 import { gerarJogosFatorados } from './fatoracao/fatorador.js';
+import { combinarComFixos } from './fatoracao/combinador.js';
 
-const grupos = criarGruposABCDE(jogoFinal);
+// base20 já existe no seu fluxo
+// fixos5 = 3 mais + 2 menos
+const fixos5 = [...tresMais, ...doisMenos];
+
+const grupos = criarGruposABCDE(base20);
 const jogosFatorados = gerarJogosFatorados(grupos);
+const jogosFinais = combinarComFixos(jogosFatorados, fixos5);
 
 console.log('\n🧩 Grupos ABCDE:', grupos);
-console.log('\n🧮 Jogos Fatorados:');
+console.log('\n🧮 Jogos Fatorados (12):');
 console.table(jogosFatorados);
+
+console.log('\n🎯 Jogos Finais (15 números):');
+console.table(jogosFinais);
 
