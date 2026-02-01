@@ -3,8 +3,9 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { simularHistorico } from './simulacao/simulador.js';
 
+// ===== SIMULAÇÃO =====
+import { simularHistorico } from './simulacao/simulador.js';
 
 // ===== CORE =====
 import {
@@ -31,6 +32,20 @@ import { analisarSequencias } from './desenho/sequencia.js';
 import { jogoValido } from './desenho/validacao.js';
 import { ajustarJogo } from './desenho/ajuste.js';
 
+// ===== FATORAÇÃO =====
+import { criarGruposABCDE } from './fatoracao/grupos.js';
+import { gerarJogosFatorados } from './fatoracao/fatorador.js';
+import { combinarComFixos } from './fatoracao/combinador.js';
+
+// ===== ANÁLISE =====
+import {
+  distribuicaoPorFaixa,
+  avaliarEquilibrio
+} from './analise/relatorio.js';
+
+// ===== IA =====
+import { comentarJogo } from './ia/analista.js';
+
 // =======================
 // SETUP
 // =======================
@@ -49,10 +64,8 @@ bd.sort((a, b) => b.concurso - a.concurso);
 // FASE 1 — ESTATÍSTICA
 // =======================
 
-// Últimos 10 sorteios
 const ultimos10 = bd.slice(0, 10);
 
-// Frequências
 const freq = contarFrequencias(ultimos10);
 const faixas = agruparPorFaixa(freq);
 const faixasOrd = faixasOrdenadas(faixas);
@@ -61,17 +74,13 @@ const faixasOrd = faixasOrdenadas(faixas);
 // FASE 1 — SELEÇÃO
 // =======================
 
-// Extremos
 const tresMais = selecionarTresMais(faixasOrd, faixas);
 const doisMenos = selecionarDoisMenos(faixasOrd, faixas);
 
-// Base 20
 const base20 = criarBase20(tresMais, doisMenos);
 
-// Seleção inicial dos 10 (curto prazo)
 let dezSelecionados = selecionarDezNumeros(base20, faixasOrd, faixas);
 
-// Complemento histórico (se faltar)
 if (dezSelecionados.length < 10) {
   const freqHist = contarFrequenciaHistorica(bd);
   const zonas = classificarZonas(freqHist);
@@ -84,7 +93,7 @@ if (dezSelecionados.length < 10) {
 }
 
 // =======================
-// JOGO INICIAL (15)
+// JOGO INICIAL
 // =======================
 
 const jogoInicial = [
@@ -94,15 +103,11 @@ const jogoInicial = [
 ];
 
 // =======================
-// FASE 2.1 — DESENHO
+// DESENHO + AJUSTE
 // =======================
 
 const analiseSeq = analisarSequencias(jogoInicial);
 const validacao = jogoValido(jogoInicial);
-
-// =======================
-// FASE 2.2 — AJUSTE
-// =======================
 
 let jogoFinal = jogoInicial;
 let infoAjuste = null;
@@ -121,7 +126,7 @@ if (!validacao.valido) {
 }
 
 // =======================
-// SAÍDA
+// SAÍDA BASE
 // =======================
 
 console.log('📊 Faixas:', faixasOrd);
@@ -144,19 +149,10 @@ if (infoAjuste) {
   console.log('\n✅ Jogo Final (sem ajuste):', jogoFinal);
 }
 
-console.log('\n🧪 SIMULAÇÃO HISTÓRICA (últimos 200 concursos)');
-const resultadoSimulacao = simularHistorico(bd, 200);
+// =======================
+// FASE B — FATORAÇÃO
+// =======================
 
-console.log('📈 Máximo de acertos encontrado:', resultadoSimulacao.maxAcertos);
-console.table(resultadoSimulacao.estatisticas);
-
-// ===== FASE B — FATORAÇÃO REAL =====
-import { criarGruposABCDE } from './fatoracao/grupos.js';
-import { gerarJogosFatorados } from './fatoracao/fatorador.js';
-import { combinarComFixos } from './fatoracao/combinador.js';
-
-// base20 já existe no seu fluxo
-// fixos5 = 3 mais + 2 menos
 const fixos5 = [...tresMais, ...doisMenos];
 
 const grupos = criarGruposABCDE(base20);
@@ -170,3 +166,58 @@ console.table(jogosFatorados);
 console.log('\n🎯 Jogos Finais (15 números):');
 console.table(jogosFinais);
 
+// =======================
+// FASE C — ANÁLISE
+// =======================
+
+console.log('\n📋 ANÁLISE DOS JOGOS\n');
+
+for (const chave in jogosFinais) {
+  const jogo = jogosFinais[chave];
+
+  const seq = analisarSequencias(jogo);
+  const dist = distribuicaoPorFaixa(jogo);
+  const eq = avaliarEquilibrio(dist);
+
+  console.log(`🧩 Jogo ${chave}`);
+  console.log('Maior sequência:', seq.maiorSequencia, `(${seq.maiorTamanho})`);
+  console.log('Distribuição:', dist);
+  console.log('Equilíbrio:', eq);
+
+  if (seq.maiorTamanho > 5) {
+    console.log('🚨 Alerta: sequência longa');
+  }
+
+  console.log('-----------------------------');
+}
+
+// =======================
+// FASE D — IA (osmAIr)
+// =======================
+
+console.log('\n🤖 osmAIr — Comentário Analítico\n');
+
+for (const chave in jogosFinais) {
+  const jogo = jogosFinais[chave];
+
+  const comentario = comentarJogo({
+    chave,
+    sequencia: analisarSequencias(jogo),
+    distribuicao: distribuicaoPorFaixa(jogo),
+    equilibrio: avaliarEquilibrio(distribuicaoPorFaixa(jogo))
+  });
+
+  console.log(`🧠 Jogo ${chave}`);
+  comentario.leitura.forEach(l => console.log('•', l));
+  console.log('-----------------------------');
+}
+
+// =======================
+// SIMULAÇÃO (OPCIONAL)
+// =======================
+
+console.log('\n🧪 SIMULAÇÃO HISTÓRICA (últimos 200 concursos)');
+const resultadoSimulacao = simularHistorico(bd, 200);
+
+console.log('📈 Máximo de acertos encontrado:', resultadoSimulacao.maxAcertos);
+console.table(resultadoSimulacao.estatisticas);
