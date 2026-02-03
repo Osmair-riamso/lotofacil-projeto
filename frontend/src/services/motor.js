@@ -2,24 +2,24 @@
 
 // ===== ESTATÍSTICA =====
 import {
-  contarFrequencias,
-  agruparPorFaixa,
-  faixasOrdenadas
+    contarFrequencias,
+    agruparPorFaixa,
+    faixasOrdenadas
 } from '../../../src/core/estatistica.js';
 
 // ===== SELEÇÃO =====
 import {
-  selecionarTresMais,
-  selecionarDoisMenos,
-  criarBase20,
-  selecionarDezNumeros,
-  complementarComHistorico
+    selecionarTresMais,
+    selecionarDoisMenos,
+    criarBase20,
+    selecionarDezNumeros,
+    complementarComHistorico
 } from '../../../src/core/selecao.js';
 
 // ===== HISTÓRICO =====
 import {
-  contarFrequenciaHistorica,
-  classificarZonas
+    contarFrequenciaHistorica,
+    classificarZonas
 } from '../../../src/core/historico.js';
 
 // ===== FATORAÇÃO =====
@@ -29,9 +29,9 @@ import { combinarComFixos } from '../../../src/fatoracao/combinador.js';
 
 // ===== ANÁLISE =====
 import {
-  analisarSequencias,
-  distribuicaoPorFaixa,
-  avaliarEquilibrio
+    analisarSequencias,
+    distribuicaoPorFaixa,
+    avaliarEquilibrio
 } from '../../../src/analise/relatorio.js';
 
 // ===== IA =====
@@ -44,106 +44,115 @@ import bd from '../../../data/bd-loto.json';
  * MOTOR PRINCIPAL
  * Replica fielmente o método da planilha
  */
-export function gerarJogosComAnalise() {
-  // =======================
-  // PREPARAÇÃO DO BANCO
-  // =======================
+export function gerarJogosComAnalise(ultimoSorteio = null) {
+    // =======================
+    // PREPARAÇÃO DO BANCO
+    // =======================
 
-  const bdOrdenado = [...bd].sort((a, b) => b.concurso - a.concurso);
-  const ultimos10 = bdOrdenado.slice(0, 10);
+    const bdOrdenado = [...bd].sort((a, b) => b.concurso - a.concurso);
+    const ultimos10 = bdOrdenado.slice(0, 10);
 
-  // =======================
-  // FASE 1 — ESTATÍSTICA
-  // =======================
+    // =======================
+    // FASE 1 — ESTATÍSTICA
+    // =======================
 
-  const freq = contarFrequencias(ultimos10);
-  const faixas = agruparPorFaixa(freq);
-  const faixasOrd = faixasOrdenadas(faixas);
+    const freq = contarFrequencias(ultimos10);
+    const faixas = agruparPorFaixa(freq);
+    const faixasOrd = faixasOrdenadas(faixas);
 
-  // =======================
-  // FASE 1 — EXTREMOS
-  // =======================
+    // =======================
+    // FASE 1 — EXTREMOS
+    // =======================
 
-  const tresMais = selecionarTresMais(faixasOrd, faixas);
-  const doisMenos = selecionarDoisMenos(faixasOrd, faixas);
+    const tresMais = selecionarTresMais(faixasOrd, faixas);
+    const doisMenos = selecionarDoisMenos(faixasOrd, faixas);
 
-  // =======================
-  // BASE 20
-  // =======================
+    // =======================
+    // BASE 20
+    // =======================
 
-  const base20 = criarBase20(tresMais, doisMenos);
+    const base20 = criarBase20(tresMais, doisMenos);
 
-  // =======================
-  // SELEÇÃO DOS 10
-  // =======================
+    // =======================
+    // SELEÇÃO DOS 10
+    // =======================
 
-  let dezSelecionados = selecionarDezNumeros(
-    base20,
-    faixasOrd,
-    faixas
-  );
-
-  // Complemento histórico se faltar
-  if (dezSelecionados.length < 10) {
-    const freqHist = contarFrequenciaHistorica(bdOrdenado);
-    const zonas = classificarZonas(freqHist);
-
-    dezSelecionados = complementarComHistorico(
-      dezSelecionados,
-      base20,
-      zonas
+    let dezSelecionados = selecionarDezNumeros(
+        base20,
+        faixasOrd,
+        faixas
     );
-  }
 
-  // =======================
-  // FATORAÇÃO
-  // =======================
+    // Complemento histórico se faltar
+    if (dezSelecionados.length < 10) {
+        const freqHist = contarFrequenciaHistorica(bdOrdenado);
+        const zonas = classificarZonas(freqHist);
 
-  const fixos5 = [...tresMais, ...doisMenos];
+        dezSelecionados = complementarComHistorico(
+            dezSelecionados,
+            base20,
+            zonas
+        );
+    }
 
-  const grupos = criarGruposABCDE(base20);
-  const jogosFatorados = gerarJogosFatorados(grupos);
-  const jogosFinais = combinarComFixos(jogosFatorados, fixos5);
+    // =======================
+    // FATORAÇÃO
+    // =======================
 
-  // =======================
-  // ANÁLISE DOS JOGOS
-  // =======================
+    const fixos5 = [...tresMais, ...doisMenos];
 
-  const jogos = [];
+    const grupos = criarGruposABCDE(base20);
+    const jogosFatorados = gerarJogosFatorados(grupos);
+    const jogosFinais = combinarComFixos(jogosFatorados, fixos5);
 
-  for (const chave in jogosFinais) {
-    const numeros = jogosFinais[chave];
+    // =======================
+    // ANÁLISE DOS JOGOS
+    // =======================
 
-    const sequencia = analisarSequencias(numeros);
-    const distribuicao = distribuicaoPorFaixa(numeros);
-    const equilibrio = avaliarEquilibrio(distribuicao);
+    const jogos = [];
 
-    const comentario = comentarJogo({
-      chave,
-      sequencia,
-      distribuicao,
-      equilibrio
-    });
+    for (const chave in jogosFinais) {
+        const numeros = jogosFinais[chave];
 
-    jogos.push({
-      chave,
-      numeros,
-      sequencia,
-      distribuicao,
-      equilibrio,
-      comentario: comentario.leitura
-    });
-  }
+        const sequencia = analisarSequencias(numeros);
+        const distribuicao = distribuicaoPorFaixa(numeros);
+        const equilibrio = avaliarEquilibrio(distribuicao);
 
-  // =======================
-  // RETORNO COMPLETO
-  // =======================
+        const comentario = comentarJogo({
+            chave,
+            sequencia,
+            distribuicao,
+            equilibrio
+        });
 
-  return {
-    tresMais,
-    doisMenos,
-    base20,
-    dezSelecionados,
-    jogos
-  };
+        let acertos = null;
+
+        if (ultimoSorteio && ultimoSorteio.numeros) {
+            acertos = numeros.filter(n =>
+                ultimoSorteio.numeros.includes(n)
+            ).length;
+        }
+
+        jogos.push({
+            chave,
+            numeros,
+            sequencia,
+            distribuicao,
+            equilibrio,
+            comentario: comentario.leitura
+            acertos
+        });
+    }
+
+    // =======================
+    // RETORNO COMPLETO
+    // =======================
+
+    return {
+        tresMais,
+        doisMenos,
+        base20,
+        dezSelecionados,
+        jogos
+    };
 }
