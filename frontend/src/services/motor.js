@@ -1,11 +1,13 @@
 // frontend/src/services/motor.js
 
+// ===== ESTATÍSTICA =====
 import {
   contarFrequencias,
   agruparPorFaixa,
   faixasOrdenadas
 } from '../../../src/core/estatistica.js';
 
+// ===== SELEÇÃO =====
 import {
   selecionarTresMais,
   selecionarDoisMenos,
@@ -14,41 +16,74 @@ import {
   complementarComHistorico
 } from '../../../src/core/selecao.js';
 
+// ===== HISTÓRICO =====
 import {
   contarFrequenciaHistorica,
   classificarZonas
 } from '../../../src/core/historico.js';
 
+// ===== FATORAÇÃO =====
 import { criarGruposABCDE } from '../../../src/fatoracao/grupos.js';
 import { gerarJogosFatorados } from '../../../src/fatoracao/fatorador.js';
 import { combinarComFixos } from '../../../src/fatoracao/combinador.js';
 
+// ===== ANÁLISE =====
 import {
   analisarSequencias,
   distribuicaoPorFaixa,
   avaliarEquilibrio
 } from '../../../src/analise/relatorio.js';
 
+// ===== IA =====
 import { comentarJogo } from '../../../src/ia/analista.js';
 
-// ⚠️ ajuste o caminho se necessário
+// ===== BANCO =====
 import bd from '../../../data/bd-loto.json';
 
+/**
+ * MOTOR PRINCIPAL
+ * Replica fielmente o método da planilha
+ */
 export function gerarJogosComAnalise() {
+  // =======================
+  // PREPARAÇÃO DO BANCO
+  // =======================
+
   const bdOrdenado = [...bd].sort((a, b) => b.concurso - a.concurso);
   const ultimos10 = bdOrdenado.slice(0, 10);
+
+  // =======================
+  // FASE 1 — ESTATÍSTICA
+  // =======================
 
   const freq = contarFrequencias(ultimos10);
   const faixas = agruparPorFaixa(freq);
   const faixasOrd = faixasOrdenadas(faixas);
 
+  // =======================
+  // FASE 1 — EXTREMOS
+  // =======================
+
   const tresMais = selecionarTresMais(faixasOrd, faixas);
   const doisMenos = selecionarDoisMenos(faixasOrd, faixas);
 
+  // =======================
+  // BASE 20
+  // =======================
+
   const base20 = criarBase20(tresMais, doisMenos);
 
-  let dezSelecionados = selecionarDezNumeros(base20, faixasOrd, faixas);
+  // =======================
+  // SELEÇÃO DOS 10
+  // =======================
 
+  let dezSelecionados = selecionarDezNumeros(
+    base20,
+    faixasOrd,
+    faixas
+  );
+
+  // Complemento histórico se faltar
   if (dezSelecionados.length < 10) {
     const freqHist = contarFrequenciaHistorica(bdOrdenado);
     const zonas = classificarZonas(freqHist);
@@ -60,37 +95,55 @@ export function gerarJogosComAnalise() {
     );
   }
 
+  // =======================
+  // FATORAÇÃO
+  // =======================
+
   const fixos5 = [...tresMais, ...doisMenos];
 
   const grupos = criarGruposABCDE(base20);
   const jogosFatorados = gerarJogosFatorados(grupos);
   const jogosFinais = combinarComFixos(jogosFatorados, fixos5);
 
-  const resultado = [];
+  // =======================
+  // ANÁLISE DOS JOGOS
+  // =======================
+
+  const jogos = [];
 
   for (const chave in jogosFinais) {
-    const jogo = jogosFinais[chave];
+    const numeros = jogosFinais[chave];
 
-    const seq = analisarSequencias(jogo);
-    const dist = distribuicaoPorFaixa(jogo);
-    const eq = avaliarEquilibrio(dist);
+    const sequencia = analisarSequencias(numeros);
+    const distribuicao = distribuicaoPorFaixa(numeros);
+    const equilibrio = avaliarEquilibrio(distribuicao);
 
     const comentario = comentarJogo({
       chave,
-      sequencia: seq,
-      distribuicao: dist,
-      equilibrio: eq
+      sequencia,
+      distribuicao,
+      equilibrio
     });
 
-    resultado.push({
+    jogos.push({
       chave,
-      numeros: jogo,
-      sequencia: seq,
-      distribuicao: dist,
-      equilibrio: eq,
+      numeros,
+      sequencia,
+      distribuicao,
+      equilibrio,
       comentario: comentario.leitura
     });
   }
 
-  return resultado;
+  // =======================
+  // RETORNO COMPLETO
+  // =======================
+
+  return {
+    tresMais,
+    doisMenos,
+    base20,
+    dezSelecionados,
+    jogos
+  };
 }
