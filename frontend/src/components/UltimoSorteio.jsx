@@ -1,47 +1,64 @@
-import { useState } from 'react';
-import bd from '../../../data/bd-loto.json';
+import { useState, useRef } from 'react';
+import {
+  buscarUltimoSorteio,
+  buscarConcurso
+} from '../services/api';
 
 export default function UltimoSorteio({ onAtualizar }) {
   const [concurso, setConcurso] = useState('');
-  const [numerosTexto, setNumerosTexto] = useState('');
+  const [numeros, setNumeros] = useState(Array(15).fill(''));
+  const inputsRef = useRef([]);
 
-  function buscarPorConcurso() {
-    const achado = bd.find(
-      c => String(c.concurso) === String(concurso)
-    );
+  function atualizarNumero(valor, index) {
+    const apenasNumeros = valor.replace(/\D/g, '').slice(0, 2);
 
-    if (!achado) {
-      alert('Concurso não encontrado no histórico');
-      return;
+    const novos = [...numeros];
+    novos[index] = apenasNumeros;
+    setNumeros(novos);
+
+    if (apenasNumeros.length === 2 && index < 14) {
+      inputsRef.current[index + 1]?.focus();
     }
+  }
 
-    const nums = achado.numeros.map(n =>
-      String(n).padStart(2, '0')
-    );
+  async function buscarAutomatico() {
+    try {
+      const data = await buscarUltimoSorteio();
 
-    setNumerosTexto(nums.join(' '));
+      setConcurso(data.concurso);
+      setNumeros(data.numeros);
 
-    onAtualizar({
-      concurso: achado.concurso,
-      numeros: nums
-    });
+      onAtualizar(data);
+    } catch {
+      alert('Erro ao buscar último sorteio');
+    }
+  }
+
+  async function buscarPorConcurso() {
+    try {
+      const data = await buscarConcurso(concurso);
+
+      setNumeros(data.numeros);
+
+      onAtualizar(data);
+    } catch {
+      alert('Concurso não encontrado');
+    }
   }
 
   function aplicarManual() {
-    const numeros = numerosTexto
-      .split(/[\s,;-]+/) // aceita espaço, vírgula, ponto e vírgula, hífen
-      .map(n => n.trim())
-      .filter(Boolean)
-      .map(n => String(n).padStart(2, '0'));
+    const numsFormatados = numeros.map(n =>
+      String(n).padStart(2, '0')
+    );
 
-    if (numeros.length !== 15) {
-      alert('Informe exatamente 15 números');
+    if (numsFormatados.some(n => n === '00' || n === '')) {
+      alert('Preencha todos os 15 números corretamente');
       return;
     }
 
     onAtualizar({
       concurso,
-      numeros
+      numeros: numsFormatados
     });
   }
 
@@ -61,17 +78,41 @@ export default function UltimoSorteio({ onAtualizar }) {
         Buscar concurso
       </button>
 
-      <br /><br />
-
-      <input
-        type="text"
-        placeholder="Números (ex: 02 04 05 09 ...)"
-        value={numerosTexto}
-        onChange={e => setNumerosTexto(e.target.value)}
-        style={{ width: '100%' }}
-      />
+      <button
+        onClick={buscarAutomatico}
+        style={{ marginLeft: 10 }}
+      >
+        🔄 Buscar automático
+      </button>
 
       <br /><br />
+
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(5, 50px)',
+          gap: 8,
+          marginBottom: 10
+        }}
+      >
+        {numeros.map((valor, index) => (
+          <input
+            key={index}
+            ref={el => (inputsRef.current[index] = el)}
+            type="text"
+            value={valor}
+            onChange={e =>
+              atualizarNumero(e.target.value, index)
+            }
+            maxLength={2}
+            style={{
+              textAlign: 'center',
+              fontSize: 16,
+              padding: 6
+            }}
+          />
+        ))}
+      </div>
 
       <button onClick={aplicarManual}>
         Aplicar sorteio

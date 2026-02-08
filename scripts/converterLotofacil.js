@@ -5,7 +5,7 @@ import path from 'path';
 const arquivoEntrada = path.resolve('data', 'lotofacil.csv');
 const arquivoSaida = path.resolve('data', 'bd-loto.json');
 
-// ler CSV
+// ler arquivo bruto
 const conteudo = fs.readFileSync(arquivoEntrada, 'utf-8');
 
 // quebrar linhas
@@ -19,7 +19,7 @@ const resultados = [];
 dados.forEach(linha => {
   if (!linha.trim()) return;
 
-  const partes = linha.split(',');
+  const partes = linha.split(','); 
 
   const concurso = Number(partes[0]);
   const data = partes[1];

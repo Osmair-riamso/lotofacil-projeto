@@ -94,6 +94,9 @@ export function gerarJogosComAnalise(ultimoSorteio = null) {
             zonas
         );
     }
+    console.log('tresMais:', tresMais);
+    console.log('doisMenos:', doisMenos);
+    console.log('base20 tamanho:', base20.length);
 
     // =======================
     // FATORAÇÃO
@@ -139,10 +142,12 @@ export function gerarJogosComAnalise(ultimoSorteio = null) {
             sequencia,
             distribuicao,
             equilibrio,
-            comentario: comentario.leitura
+            comentario: comentario.leitura,
             acertos
         });
     }
+    // ordena do maior número de acertos para o menor
+    jogos.sort((a, b) => (b.acertos ?? -1) - (a.acertos ?? -1));
 
     // =======================
     // RETORNO COMPLETO
