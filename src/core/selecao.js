@@ -5,12 +5,42 @@ import { NUMEROS } from './estatistica.js';
 /**
  * Seleciona os 3 mais frequentes (travados)
  */
-export function selecionarTresMais(faixasOrdenadas, faixas) {
-  const maiorFaixa = faixasOrdenadas[0];
-  const candidatos = [...faixas[maiorFaixa]];
+export function selecionarTresMais(faixasOrd, faixas) {
+  const resultado = [];
 
-  return candidatos.slice(0, 3);
+  for (const faixa of faixasOrd) {
+    const numeros = faixas[faixa] || [];
+
+    for (const n of numeros) {
+      if (!resultado.includes(n)) {
+        resultado.push(n);
+      }
+
+      if (resultado.length === 3) {
+        return resultado;
+      }
+    }
+  }
+
+  // 🔒 GARANTIA MATEMÁTICA FINAL
+  // Se não conseguiu 3 pelas faixas, completa com 01–25
+  if (resultado.length < 3) {
+    const todos = Array.from({ length: 25 }, (_, i) =>
+      String(i + 1).padStart(2, '0')
+    );
+
+    for (const n of todos) {
+      if (!resultado.includes(n)) {
+        resultado.push(n);
+      }
+
+      if (resultado.length === 3) break;
+    }
+  }
+
+  return resultado;
 }
+
 
 /**
  * Seleciona os 2 menos frequentes (azarões)

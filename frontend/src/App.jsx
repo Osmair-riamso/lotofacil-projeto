@@ -10,6 +10,7 @@ import { gerarJogosComAnalise } from './services/motor';
  */
 import UltimoSorteio from './components/UltimoSorteio';
 import ResumoExtremos from './components/ResumoExtremos';
+import UltimosConcursos from './components/UltimosConcursos';
 
 function App() {
   const [jogos, setJogos] = useState([]);
@@ -55,16 +56,31 @@ function App() {
       <h1>osmAIr 🎯</h1>
       <p>Análise estatística e desenho dos jogos</p>
 
-      {/* ===== ETAPA 1 — ÚLTIMO SORTEIO ===== */}
-      <UltimoSorteio onAtualizar={setUltimoSorteio} />
+      {/* ===== TOPO EM 2 COLUNAS ===== */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: 20,
+          alignItems: 'start'
+        }}
+      >
+        {/* ESQUERDA */}
+        <div>
+          <UltimoSorteio onAtualizar={setUltimoSorteio} />
 
-      {ultimoSorteio && (
-        <div style={{ marginTop: 10 }}>
-          <strong>Concurso:</strong> {ultimoSorteio.concurso}
-          <br />
-          <strong>Números:</strong> {ultimoSorteio.numeros.join(' ')}
+          {ultimoSorteio && (
+            <div style={{ marginTop: 10 }}>
+              <strong>Concurso:</strong> {ultimoSorteio.concurso}
+              <br />
+              <strong>Números:</strong> {ultimoSorteio.numeros.join(' ')}
+            </div>
+          )}
         </div>
-      )}
+
+        {/* DIREITA */}
+        <UltimosConcursos concurso={ultimoSorteio?.concurso} />
+      </div>
 
       {/* BOTÃO */}
       <button
@@ -74,13 +90,10 @@ function App() {
         Gerar jogos
       </button>
 
-      {/* ===== ETAPA 2 — EXTREMOS ===== */}
-      <ResumoExtremos
-        tresMais={tresMais}
-        doisMenos={doisMenos}
-      />
+      {/* RESUMO */}
+      <ResumoExtremos tresMais={tresMais} doisMenos={doisMenos} />
 
-      {/* ===== ETAPA 3 — JOGOS ===== */}
+      {/* JOGOS */}
       <div
         style={{
           display: 'grid',

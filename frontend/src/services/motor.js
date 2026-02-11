@@ -67,11 +67,33 @@ export function gerarJogosComAnalise(ultimoSorteio = null) {
     const tresMais = selecionarTresMais(faixasOrd, faixas);
     const doisMenos = selecionarDoisMenos(faixasOrd, faixas);
 
+    console.log('DEBUG extremos:', {
+        tresMais,
+        doisMenos,
+        tamanhoTresMais: tresMais.length,
+        tamanhoDoisMenos: doisMenos.length
+    });
+
     // =======================
     // BASE 20
     // =======================
 
-    const base20 = criarBase20(tresMais, doisMenos);
+    let base20 = criarBase20(tresMais, doisMenos);
+
+    // 🔒 Garantia matemática: base precisa ter 20 números
+    if (base20.length !== 20) {
+        console.warn('⚠️ Base inválida detectada. Recalculando...');
+
+        // fallback simples: usar todos 01-25 removendo extremos
+        const todos = Array.from({ length: 25 }, (_, i) =>
+            String(i + 1).padStart(2, '0')
+        );
+
+        base20 = todos.filter(
+            n => !tresMais.includes(n) && !doisMenos.includes(n)
+        );
+    }
+
 
     // =======================
     // SELEÇÃO DOS 10

@@ -81,3 +81,40 @@ app.get('/lotofacil/:concurso', (req, res) => {
 app.listen(PORT, () => {
   console.log(`🚀 Backend rodando em http://localhost:${PORT}`);
 });
+
+// ===============================
+// ÚLTIMOS 10 CONCURSOS ANTERIORES
+// ===============================
+app.get('/lotofacil/ultimos/:concurso', (req, res) => {
+  const numero = Number(req.params.concurso);
+
+  const index = bd.findIndex(c => c.concurso === numero);
+
+  if (index === -1) {
+    return res.status(404).json({ erro: 'Concurso não encontrado' });
+  }
+
+  const ultimos = bd.slice(index, index + 10).map(c => ({
+    concurso: c.concurso,
+    numeros: c.numeros.map(n => String(n).padStart(2, '0'))
+  }));
+
+  res.json(ultimos);
+});
+
+app.get('/lotofacil/:concurso/anteriores', (req, res) => {
+  const numero = Number(req.params.concurso);
+
+  const index = bd.findIndex(c => c.concurso === numero);
+
+  if (index === -1) {
+    return res.status(404).json({ erro: 'Concurso não encontrado' });
+  }
+
+  const ultimos = bd.slice(index + 1, index + 11);
+
+  res.json(ultimos);
+});
+
+
+
