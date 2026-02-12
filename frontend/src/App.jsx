@@ -18,13 +18,13 @@ function App() {
   const [doisMenos, setDoisMenos] = useState([]);
   const [ultimoSorteio, setUltimoSorteio] = useState(null);
 
-  function gerar() {
-    const resultado = gerarJogosComAnalise(ultimoSorteio || null);
+async function gerar() {
+  const resultado = await gerarJogosComAnalise(ultimoSorteio);
 
-    setJogos(resultado.jogos);
-    setTresMais(resultado.tresMais);
-    setDoisMenos(resultado.doisMenos);
-  }
+  setJogos(resultado.jogos);
+  setTresMais(resultado.tresMais);
+  setDoisMenos(resultado.doisMenos);
+}
 
   /**
    * Define estilo visual dos números

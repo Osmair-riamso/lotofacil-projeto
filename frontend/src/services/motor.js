@@ -1,25 +1,26 @@
-// frontend/src/services/motor.js
+// ===== API =====
+import { buscarUltimosConcursos } from './api';
 
 // ===== ESTATÍSTICA =====
 import {
-    contarFrequencias,
-    agruparPorFaixa,
-    faixasOrdenadas
+  contarFrequencias,
+  agruparPorFaixa,
+  faixasOrdenadas
 } from '../../../src/core/estatistica.js';
 
 // ===== SELEÇÃO =====
 import {
-    selecionarTresMais,
-    selecionarDoisMenos,
-    criarBase20,
-    selecionarDezNumeros,
-    complementarComHistorico
+  selecionarTresMais,
+  selecionarDoisMenos,
+  criarBase20,
+  selecionarDezNumeros,
+  complementarComHistorico
 } from '../../../src/core/selecao.js';
 
 // ===== HISTÓRICO =====
 import {
-    contarFrequenciaHistorica,
-    classificarZonas
+  contarFrequenciaHistorica,
+  classificarZonas
 } from '../../../src/core/historico.js';
 
 // ===== FATORAÇÃO =====
@@ -29,157 +30,146 @@ import { combinarComFixos } from '../../../src/fatoracao/combinador.js';
 
 // ===== ANÁLISE =====
 import {
-    analisarSequencias,
-    distribuicaoPorFaixa,
-    avaliarEquilibrio
+  analisarSequencias,
+  distribuicaoPorFaixa,
+  avaliarEquilibrio
 } from '../../../src/analise/relatorio.js';
 
 // ===== IA =====
 import { comentarJogo } from '../../../src/ia/analista.js';
 
-// ===== BANCO =====
-import bd from '../../../data/bd-loto.json';
+/**
+ * Garante quantidade mínima de elementos
+ */
+function garantirQuantidade(arr, qtd, pool) {
+  const faltam = qtd - arr.length;
+
+  if (faltam <= 0) return arr.slice(0, qtd);
+
+  const extras = pool.filter(n => !arr.includes(n)).slice(0, faltam);
+  return [...arr, ...extras];
+}
 
 /**
  * MOTOR PRINCIPAL
- * Replica fielmente o método da planilha
+ * Usa banco vivo do backend
  */
-export function gerarJogosComAnalise(ultimoSorteio = null) {
-    // =======================
-    // PREPARAÇÃO DO BANCO
-    // =======================
+export async function gerarJogosComAnalise(ultimoSorteio = null) {
+  // =======================
+  // BANCO ATUALIZADO
+  // =======================
+  const bdOrdenado = await buscarUltimosConcursos(1000);
+  bdOrdenado.sort((a, b) => b.concurso - a.concurso);
 
-    const bdOrdenado = [...bd].sort((a, b) => b.concurso - a.concurso);
-    const ultimos10 = bdOrdenado.slice(0, 10);
+  const ultimos10 = bdOrdenado.slice(0, 10);
 
-    // =======================
-    // FASE 1 — ESTATÍSTICA
-    // =======================
+  // =======================
+  // ESTATÍSTICA
+  // =======================
+  const freq = contarFrequencias(ultimos10);
+  const faixas = agruparPorFaixa(freq);
+  const faixasOrd = faixasOrdenadas(faixas);
 
-    const freq = contarFrequencias(ultimos10);
-    const faixas = agruparPorFaixa(freq);
-    const faixasOrd = faixasOrdenadas(faixas);
+  // =======================
+  // EXTREMOS
+  // =======================
+  const tresMaisRaw = selecionarTresMais(faixasOrd, faixas);
+  const doisMenosRaw = selecionarDoisMenos(faixasOrd, faixas);
 
-    // =======================
-    // FASE 1 — EXTREMOS
-    // =======================
+  const todos25 = Array.from({ length: 25 }, (_, i) =>
+    String(i + 1).padStart(2, '0')
+  );
 
-    const tresMais = selecionarTresMais(faixasOrd, faixas);
-    const doisMenos = selecionarDoisMenos(faixasOrd, faixas);
+  const tresMais = garantirQuantidade(tresMaisRaw, 3, todos25);
+  const doisMenos = garantirQuantidade(doisMenosRaw, 2, todos25);
 
-    console.log('DEBUG extremos:', {
-        tresMais,
-        doisMenos,
-        tamanhoTresMais: tresMais.length,
-        tamanhoDoisMenos: doisMenos.length
+  // =======================
+  // BASE 20
+  // =======================
+  let base20 = criarBase20(tresMais, doisMenos);
+
+  if (base20.length !== 20) {
+    console.warn('⚠️ Base inválida. Recalculando fallback...');
+
+    base20 = todos25
+      .filter(n => !tresMais.includes(n) && !doisMenos.includes(n))
+      .slice(0, 20);
+  }
+
+  // =======================
+  // SELEÇÃO DOS 10
+  // =======================
+  let dezSelecionados = selecionarDezNumeros(base20, faixasOrd, faixas);
+
+  if (dezSelecionados.length < 10) {
+    const freqHist = contarFrequenciaHistorica(bdOrdenado);
+    const zonas = classificarZonas(freqHist);
+
+    dezSelecionados = complementarComHistorico(
+      dezSelecionados,
+      base20,
+      zonas
+    );
+  }
+
+  // =======================
+  // FATORAÇÃO
+  // =======================
+  const fixos5 = [...tresMais, ...doisMenos];
+
+  const grupos = criarGruposABCDE(base20);
+  const jogosFatorados = gerarJogosFatorados(grupos);
+  const jogosFinais = combinarComFixos(jogosFatorados, fixos5);
+
+  // =======================
+  // ANÁLISE DOS JOGOS
+  // =======================
+  const jogos = [];
+
+  for (const chave in jogosFinais) {
+    const numeros = jogosFinais[chave];
+
+    const sequencia = analisarSequencias(numeros);
+    const distribuicao = distribuicaoPorFaixa(numeros);
+    const equilibrio = avaliarEquilibrio(distribuicao);
+
+    const comentario = comentarJogo({
+      chave,
+      sequencia,
+      distribuicao,
+      equilibrio
     });
 
-    // =======================
-    // BASE 20
-    // =======================
+    let acertos = null;
 
-    let base20 = criarBase20(tresMais, doisMenos);
-
-    // 🔒 Garantia matemática: base precisa ter 20 números
-    if (base20.length !== 20) {
-        console.warn('⚠️ Base inválida detectada. Recalculando...');
-
-        // fallback simples: usar todos 01-25 removendo extremos
-        const todos = Array.from({ length: 25 }, (_, i) =>
-            String(i + 1).padStart(2, '0')
-        );
-
-        base20 = todos.filter(
-            n => !tresMais.includes(n) && !doisMenos.includes(n)
-        );
+    if (ultimoSorteio?.numeros) {
+      acertos = numeros.filter(n =>
+        ultimoSorteio.numeros.includes(n)
+      ).length;
     }
 
+    jogos.push({
+      chave,
+      numeros,
+      sequencia,
+      distribuicao,
+      equilibrio,
+      comentario: comentario.leitura,
+      acertos
+    });
+  }
 
-    // =======================
-    // SELEÇÃO DOS 10
-    // =======================
+  // Ordena por acertos
+  jogos.sort((a, b) => (b.acertos ?? -1) - (a.acertos ?? -1));
 
-    let dezSelecionados = selecionarDezNumeros(
-        base20,
-        faixasOrd,
-        faixas
-    );
-
-    // Complemento histórico se faltar
-    if (dezSelecionados.length < 10) {
-        const freqHist = contarFrequenciaHistorica(bdOrdenado);
-        const zonas = classificarZonas(freqHist);
-
-        dezSelecionados = complementarComHistorico(
-            dezSelecionados,
-            base20,
-            zonas
-        );
-    }
-    console.log('tresMais:', tresMais);
-    console.log('doisMenos:', doisMenos);
-    console.log('base20 tamanho:', base20.length);
-
-    // =======================
-    // FATORAÇÃO
-    // =======================
-
-    const fixos5 = [...tresMais, ...doisMenos];
-
-    const grupos = criarGruposABCDE(base20);
-    const jogosFatorados = gerarJogosFatorados(grupos);
-    const jogosFinais = combinarComFixos(jogosFatorados, fixos5);
-
-    // =======================
-    // ANÁLISE DOS JOGOS
-    // =======================
-
-    const jogos = [];
-
-    for (const chave in jogosFinais) {
-        const numeros = jogosFinais[chave];
-
-        const sequencia = analisarSequencias(numeros);
-        const distribuicao = distribuicaoPorFaixa(numeros);
-        const equilibrio = avaliarEquilibrio(distribuicao);
-
-        const comentario = comentarJogo({
-            chave,
-            sequencia,
-            distribuicao,
-            equilibrio
-        });
-
-        let acertos = null;
-
-        if (ultimoSorteio && ultimoSorteio.numeros) {
-            acertos = numeros.filter(n =>
-                ultimoSorteio.numeros.includes(n)
-            ).length;
-        }
-
-        jogos.push({
-            chave,
-            numeros,
-            sequencia,
-            distribuicao,
-            equilibrio,
-            comentario: comentario.leitura,
-            acertos
-        });
-    }
-    // ordena do maior número de acertos para o menor
-    jogos.sort((a, b) => (b.acertos ?? -1) - (a.acertos ?? -1));
-
-    // =======================
-    // RETORNO COMPLETO
-    // =======================
-
-    return {
-        tresMais,
-        doisMenos,
-        base20,
-        dezSelecionados,
-        jogos
-    };
+  // =======================
+  // RETORNO
+  // =======================
+  return {
+    tresMais,
+    doisMenos,
+    base20,
+    dezSelecionados,
+    jogos
+  };
 }

@@ -4,6 +4,8 @@ import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import './autoUpdate.js'; // importa o módulo de atualização automática 
+
 
 const app = express();
 const PORT = 3001;
@@ -117,4 +119,20 @@ app.get('/lotofacil/:concurso/anteriores', (req, res) => {
 });
 
 
+// ===============================
+// ÚLTIMOS N CONCURSOS DO BANCO LOCAL
+// ===============================
+app.get('/lotofacil/ultimos/:qtd', (req, res) => {
+  const qtd = Number(req.params.qtd) || 10;
+
+  try {
+    const bd = JSON.parse(
+      fs.readFileSync('../data/bd-loto.json', 'utf-8')
+    );
+
+    res.json(bd.slice(0, qtd));
+  } catch (err) {
+    res.status(500).json({ erro: 'Falha ao ler banco local' });
+  }
+});
 

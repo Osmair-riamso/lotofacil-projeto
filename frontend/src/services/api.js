@@ -39,3 +39,16 @@ export async function buscarUltimos(concurso) {
   return await res.json();
 }
 
+
+
+export async function buscarUltimosConcursos(qtd = 10) {
+  const res = await fetch(
+    `http://localhost:3001/lotofacil/ultimos/${qtd}`
+  );
+
+  if (!res.ok) {
+    throw new Error('Erro ao buscar últimos concursos');
+  }
+
+  return res.json();
+}
