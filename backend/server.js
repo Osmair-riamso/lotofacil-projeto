@@ -1,138 +1,103 @@
 import express from 'express';
-import fetch from 'node-fetch';
 import cors from 'cors';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import './autoUpdate.js'; // importa o módulo de atualização automática 
-
+import fetch from 'node-fetch';
 
 const app = express();
 const PORT = 3001;
 
 app.use(cors());
+app.use(express.json());
 
 /**
- * ===============================
- * CARREGAR BANCO LOCAL bd-loto.json
- * ===============================
+ * URL base da API pública das loterias
+ * (estável e já testada)
  */
+const API_BASE = 'https://loteriascaixa-api.herokuapp.com/api';
 
-// necessário para usar path com ESModules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// caminho do JSON (um nível acima do backend)
-const bdPath = path.resolve(__dirname, '../data/bd-loto.json');
-
-// lê o arquivo
-const bd = JSON.parse(fs.readFileSync(bdPath, 'utf-8'));
-
-/**
- * ===============================
- * ROTA: ÚLTIMO RESULTADO DA LOTOFÁCIL (API CAIXA)
- * ===============================
- */
+/* =====================================================
+   1️⃣ ÚLTIMO SORTEIO DA LOTOFÁCIL
+===================================================== */
 app.get('/lotofacil/ultimo', async (req, res) => {
   try {
-    const response = await fetch(
-      'https://servicebus2.caixa.gov.br/portaldeloterias/api/lotofacil'
-    );
-
+    const response = await fetch(`${API_BASE}/lotofacil/latest`);
     const data = await response.json();
 
-    const numeros = data.listaDezenas.map(n =>
+    const numeros = data.dezenas.map(n =>
       String(n).padStart(2, '0')
     );
 
     res.json({
-      concurso: data.numero,
+      concurso: data.concurso,
+      data: data.data,
       numeros
     });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ erro: 'Falha ao buscar Lotofácil' });
+    console.error('Erro ao buscar último sorteio:', err);
+    res.status(500).json({ erro: 'Falha ao buscar último sorteio' });
   }
 });
 
-/**
- * ===============================
- * ROTA: BUSCAR CONCURSO ESPECÍFICO NO JSON LOCAL
- * ===============================
- */
-app.get('/lotofacil/:concurso', (req, res) => {
-  const numero = Number(req.params.concurso);
-
-  const achado = bd.find(c => c.concurso === numero);
-
-  if (!achado) {
-    return res.status(404).json({ erro: 'Concurso não encontrado' });
-  }
-
-  res.json({
-    concurso: achado.concurso,
-    numeros: achado.numeros.map(n => String(n).padStart(2, '0'))
-  });
-});
-
-/**
- * ===============================
- * START DO SERVIDOR
- * ===============================
- */
-app.listen(PORT, () => {
-  console.log(`🚀 Backend rodando em http://localhost:${PORT}`);
-});
-
-// ===============================
-// ÚLTIMOS 10 CONCURSOS ANTERIORES
-// ===============================
-app.get('/lotofacil/ultimos/:concurso', (req, res) => {
-  const numero = Number(req.params.concurso);
-
-  const index = bd.findIndex(c => c.concurso === numero);
-
-  if (index === -1) {
-    return res.status(404).json({ erro: 'Concurso não encontrado' });
-  }
-
-  const ultimos = bd.slice(index, index + 10).map(c => ({
-    concurso: c.concurso,
-    numeros: c.numeros.map(n => String(n).padStart(2, '0'))
-  }));
-
-  res.json(ultimos);
-});
-
-app.get('/lotofacil/:concurso/anteriores', (req, res) => {
-  const numero = Number(req.params.concurso);
-
-  const index = bd.findIndex(c => c.concurso === numero);
-
-  if (index === -1) {
-    return res.status(404).json({ erro: 'Concurso não encontrado' });
-  }
-
-  const ultimos = bd.slice(index + 1, index + 11);
-
-  res.json(ultimos);
-});
-
-
-// ===============================
-// ÚLTIMOS N CONCURSOS DO BANCO LOCAL
-// ===============================
-app.get('/lotofacil/ultimos/:qtd', (req, res) => {
-  const qtd = Number(req.params.qtd) || 10;
-
+/* =====================================================
+   2️⃣ BUSCAR CONCURSO ESPECÍFICO
+===================================================== */
+app.get('/lotofacil/:concurso', async (req, res) => {
   try {
-    const bd = JSON.parse(
-      fs.readFileSync('../data/bd-loto.json', 'utf-8')
+    const { concurso } = req.params;
+
+    const response = await fetch(`${API_BASE}/lotofacil/${concurso}`);
+
+    if (!response.ok) {
+      return res.status(404).json({ erro: 'Concurso não encontrado' });
+    }
+
+    const data = await response.json();
+
+    const numeros = data.dezenas.map(n =>
+      String(n).padStart(2, '0')
     );
 
-    res.json(bd.slice(0, qtd));
+    res.json({
+      concurso: data.concurso,
+      data: data.data,
+      numeros
+    });
   } catch (err) {
-    res.status(500).json({ erro: 'Falha ao ler banco local' });
+    console.error('Erro ao buscar concurso:', err);
+    res.status(500).json({ erro: 'Falha ao buscar concurso' });
   }
 });
 
+/* =====================================================
+   3️⃣ BUSCAR ÚLTIMOS N CONCURSOS
+   Ex: /lotofacil/ultimos/10
+===================================================== */
+app.get('/lotofacil/ultimos/:qtd', async (req, res) => {
+  try {
+    const qtd = Number(req.params.qtd);
+
+    const response = await fetch(`${API_BASE}/lotofacil`);
+    const data = await response.json();
+
+    const ultimos = data
+      .slice(0, qtd)
+      .map(c => ({
+        concurso: c.concurso,
+        data: c.data,
+        numeros: c.dezenas.map(n =>
+          String(n).padStart(2, '0')
+        )
+      }));
+
+    res.json(ultimos);
+  } catch (err) {
+    console.error('Erro ao buscar últimos concursos:', err);
+    res.status(500).json({ erro: 'Falha ao buscar últimos concursos' });
+  }
+});
+
+/* =====================================================
+   SERVIDOR ONLINE
+===================================================== */
+app.listen(PORT, () => {
+  console.log(`🚀 Backend osmAIr rodando em http://localhost:${PORT}`);
+});

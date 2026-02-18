@@ -53,8 +53,8 @@ async function gerar() {
 
   return (
     <div style={{ padding: 20, fontFamily: 'Arial' }}>
-      <h1>osmAIr 🎯</h1>
-      <p>Análise estatística e desenho dos jogos</p>
+      <h1>LotoFácil com OsmAIr 🎯</h1>
+      <p>Análise, estatística e desenho dos jogos</p>
 
       {/* ===== TOPO EM 2 COLUNAS ===== */}
       <div
@@ -146,7 +146,7 @@ async function gerar() {
             </p>
 
             {/* IA */}
-            <strong>Comentário osmAIr:</strong>
+            <strong>Comentário OsmAIr:</strong>
             <ul>
               {jogo.comentario.map((c, i) => (
                 <li key={i}>{c}</li>
