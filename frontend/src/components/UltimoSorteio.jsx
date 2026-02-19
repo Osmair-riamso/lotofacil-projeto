@@ -82,7 +82,7 @@ export default function UltimoSorteio({ onAtualizar }) {
         onClick={buscarAutomatico}
         style={{ marginLeft: 10 }}
       >
-        🔄 Buscar automático
+        🔄 Concurso Atual
       </button>
 
       <br /><br />
@@ -115,7 +115,7 @@ export default function UltimoSorteio({ onAtualizar }) {
       </div>
 
       <button onClick={aplicarManual}>
-        Aplicar sorteio
+        Testar Jogo manualmente
       </button>
     </div>
   );

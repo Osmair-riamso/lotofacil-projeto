@@ -1,59 +1,43 @@
 import { useEffect, useState } from 'react';
-import { buscarUltimos } from '../services/api';
+import { buscarUltimosConcursos } from '../services/api';
 
-export default function UltimosConcursos({ concurso }) {
-  const [lista, setLista] = useState([]);
+export default function UltimosConcursos() {
+  const [concursos, setConcursos] = useState([]);
 
-  /**
-   * Sempre que o concurso mudar,
-   * buscamos os 10 anteriores no backend
-   */
   useEffect(() => {
     async function carregar() {
-      if (!concurso) return;
-
       try {
-        const dados = await buscarUltimos(concurso);
-        setLista(dados);
+        const dados = await buscarUltimosConcursos(10);
+        setConcursos(dados);
       } catch (err) {
-        console.error('Erro ao buscar últimos concursos', err);
+        console.error('Erro ao carregar últimos concursos', err);
       }
     }
 
     carregar();
-  }, [concurso]);
+  }, []);
 
   return (
-    <div
-      style={{
-        border: '2px solid red',
-        padding: 15,
-        borderRadius: 8,
-        minHeight: 250
-      }}
-    >
-      <h3>Últimos 10 jogos</h3>
+    <div style={{ marginTop: 10 }}>
+      <h3 style={{ marginBottom: 8 }}>Últimos 10 concursos</h3>
 
-      {lista.length === 0 && (
-        <p style={{ opacity: 0.6 }}>Nenhum dado carregado...</p>
+      {concursos.length === 0 ? (
+        <p style={{ opacity: 0.6 }}>Nenhum dado carregado</p>
+      ) : (
+        concursos.map(c => (
+          <div
+            key={c.concurso}
+            style={{
+              marginBottom: 6,
+              fontSize: 14,
+              lineHeight: 1.4
+            }}
+          >
+            <strong>{c.concurso}</strong> → {c.numeros.join(' ')}
+          </div>
+        ))
       )}
-
-      {lista.map(item => (
-        <div
-          key={item.concurso}
-          style={{
-            marginBottom: 10,
-            paddingBottom: 6,
-            borderBottom: '1px solid #444'
-          }}
-        >
-          <strong>Concurso {item.concurso}</strong>
-          <br />
-          <span style={{ fontSize: 14 }}>
-            {item.numeros.join(' ')}
-          </span>
-        </div>
-      ))}
     </div>
   );
+
 }
