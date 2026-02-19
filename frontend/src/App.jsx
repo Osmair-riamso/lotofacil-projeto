@@ -25,6 +25,12 @@ function App() {
     setTresMais(resultado.tresMais);
     setDoisMenos(resultado.doisMenos);
   }
+  function limparTudo() {
+    setUltimoSorteio(null);
+    setJogos([]);
+    setTresMais([]);
+    setDoisMenos([]);
+  }
 
   /**
    * Define estilo visual dos números
@@ -89,7 +95,7 @@ function App() {
       >
         Gerar jogos
       </button>
-     
+
 
       {/* RESUMO */}
       <ResumoExtremos tresMais={tresMais} doisMenos={doisMenos} />

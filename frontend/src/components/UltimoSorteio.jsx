@@ -61,6 +61,9 @@ export default function UltimoSorteio({ onAtualizar }) {
       numeros: numsFormatados
     });
   }
+  function limparCampos() {
+    setNumeros(Array(15).fill(''));
+  }
 
   return (
     <div style={{ marginBottom: 20 }}>
@@ -112,11 +115,16 @@ export default function UltimoSorteio({ onAtualizar }) {
             }}
           />
         ))}
-      </div>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button onClick={aplicarManual}>
+            Testar jogo manualmente
+          </button>
 
-      <button onClick={aplicarManual}>
-        Testar Jogo manualmente
-      </button>
+          <button onClick={limparCampos}>
+            Limpar
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
