@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 
 /**
@@ -11,6 +12,8 @@ import { gerarJogosComAnalise } from './services/motor';
 import UltimoSorteio from './components/UltimoSorteio';
 import ResumoExtremos from './components/ResumoExtremos';
 import UltimosConcursos from './components/UltimosConcursos';
+import SimuladorMetodo from './components/SimuladorMetodo';
+
 
 function App() {
   const [jogos, setJogos] = useState([]);
@@ -86,6 +89,7 @@ function App() {
 
         {/* DIREITA */}
         <UltimosConcursos concurso={ultimoSorteio?.concurso} />
+        <SimuladorMetodo />
       </div>
 
       {/* BOTÃO */}
