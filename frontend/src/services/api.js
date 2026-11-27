@@ -19,10 +19,18 @@ export async function buscarConcurso(concurso) {
 }
 
 /**
- * OS 10 ÚLTIMOS CONCURSOS (PAINEL DIREITO)
+ * Os N últimos concursos
  */
 export async function buscarUltimosConcursos(qtd = 10) {
   const res = await fetch(`${API_URL}/lotofacil/ultimos/${qtd}`);
   if (!res.ok) throw new Error('Erro ao buscar últimos concursos');
   return res.json();
+}
+
+/**
+ * Base histórica para alimentar o motor.
+ * Busca os últimos 300 concursos por padrão (suficiente para simulação).
+ */
+export async function buscarBaseMotor(qtd = 300) {
+  return buscarUltimosConcursos(qtd);
 }

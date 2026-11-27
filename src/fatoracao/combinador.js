@@ -1,4 +1,6 @@
 // src/fatoracao/combinador.js
+import { sortear } from './aleatorio.js';
+
 
 function sortear(array, quantidade) {
   const copia = [...array];

@@ -2,9 +2,6 @@
 
 import { NUMEROS } from './estatistica.js';
 
-/**
- * Conta frequência histórica completa
- */
 export function contarFrequenciaHistorica(bd) {
   const freq = Object.fromEntries(NUMEROS.map(n => [n, 0]));
 
@@ -18,18 +15,14 @@ export function contarFrequenciaHistorica(bd) {
   return freq;
 }
 
-/**
- * Classifica números em zonas históricas
- * topo, meio e fundo
- */
 export function classificarZonas(freqHist) {
   const ordenados = Object.entries(freqHist)
     .sort((a, b) => b[1] - a[1])
     .map(([n]) => n);
 
   const total = ordenados.length;
-  const topo = ordenados.slice(0, Math.floor(total * 0.2));   // 20%
-  const fundo = ordenados.slice(Math.floor(total * 0.8));     // 20%
+  const topo = ordenados.slice(0, Math.floor(total * 0.2));
+  const fundo = ordenados.slice(Math.floor(total * 0.8));
   const meio = ordenados.slice(
     Math.floor(total * 0.2),
     Math.floor(total * 0.8)

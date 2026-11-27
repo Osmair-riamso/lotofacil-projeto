@@ -1,13 +1,9 @@
 // src/core/estatistica.js
 
-// Números fixos da Lotofácil
 export const NUMEROS = Array.from({ length: 25 }, (_, i) =>
   String(i + 1).padStart(2, '0')
 );
 
-/**
- * Conta frequência dos números em um conjunto de concursos
- */
 export function contarFrequencias(concursos) {
   const freq = Object.fromEntries(NUMEROS.map(n => [n, 0]));
 
@@ -21,10 +17,6 @@ export function contarFrequencias(concursos) {
   return freq;
 }
 
-/**
- * Agrupa números por faixa de ocorrência
- * Ex: { '10': ['25'], '9': ['10','14'], '8': [...] }
- */
 export function agruparPorFaixa(freq) {
   const faixas = {};
 
@@ -36,10 +28,6 @@ export function agruparPorFaixa(freq) {
   return faixas;
 }
 
-/**
- * Retorna as faixas ordenadas da maior para a menor
- * Ex: [10, 9, 8, 7, 6, ...]
- */
 export function faixasOrdenadas(faixas) {
   return Object.keys(faixas)
     .map(Number)
