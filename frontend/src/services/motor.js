@@ -73,19 +73,22 @@ function scoreJogo(analise) {
   return Math.max(0, Number(score.toFixed(1)));
 }
 
-export function processar(concursos, meuJogo = null) {
+export function processar(concursos, meuJogo = null, qtdConcursos = null) {
   if (!Array.isArray(concursos) || concursos.length === 0) {
     throw new Error('Lista de concursos inválida ou vazia.');
   }
 
-  const todos = concursos.map(c => ({
+  const amostra = qtdConcursos && Number(qtdConcursos) > 0
+    ? concursos.slice(0, Number(qtdConcursos))
+    : concursos;
+
+  const todos = amostra.map(c => ({
     ...c,
     numeros: normalizar(c.numeros || [])
   }));
 
   const ultimos10 = todos.slice(0, 10);
 
-  // Usa selecionarNumeros que já retorna tudo que precisamos
   const {
     top10Curto,
     top10Longo,
@@ -129,7 +132,6 @@ export function processar(concursos, meuJogo = null) {
     analises[chave] = analise;
     scores[chave] = scoreJogo(analise);
     comentarios[chave] = gerarRelatorio(chave, jogoFinal, analise, { tresMais, doisMenos });
-
   }
 
   const ranking = Object.entries(scores).sort((a, b) => b[1] - a[1]);
@@ -137,8 +139,15 @@ export function processar(concursos, meuJogo = null) {
   const jogoFinal = melhorChave ? jogosFinais[melhorChave] : [];
 
   let analiseUsuario = null;
+  let jogoParaSimular = jogoFinal;
+
   if (meuJogo && meuJogo.length === 15) {
     const jogoUsuario = normalizar(meuJogo);
+
+    // A simulação SEMPRE usa o jogo exato digitado pelo usuário,
+    // sem ajustes, para que um sorteio exato retorne 15 acertos corretamente.
+    jogoParaSimular = jogoUsuario;
+
     const ajuste = ajustarJogo({ jogo: jogoUsuario, tresMais, base20 });
     const finalUsuario = normalizar(ajuste.jogo);
 
@@ -153,7 +162,7 @@ export function processar(concursos, meuJogo = null) {
     };
   }
 
-  const resultadoSimulacao = simularMelhorJogo(jogoFinal, todos);
+  const resultadoSimulacao = simularMelhorJogo(jogoParaSimular, todos);
 
   return {
     top10Curto,

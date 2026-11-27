@@ -8,14 +8,14 @@ const CHAVES = [
   'ALE1', 'ALE2', 'ALE3'
 ];
 
-/**
- * Garante um array de 15 números únicos, preenchendo com a base20 se faltar.
- */
 function garantir15Unicos(jogo, base20) {
-  const unicos = [...new Set(jogo.map(n => String(n).padStart(2, '0')))];
+  const entrada = Array.isArray(jogo) ? jogo : [];
+  const base = Array.isArray(base20) ? base20 : [];
+
+  const unicos = [...new Set(entrada.map(n => String(n).padStart(2, '0')))].filter(Boolean);
   const usados = new Set(unicos);
 
-  for (const n of base20) {
+  for (const n of base) {
     const num = String(n).padStart(2, '0');
     if (!usados.has(num)) {
       unicos.push(num);
@@ -30,9 +30,6 @@ function garantir15Unicos(jogo, base20) {
     .map(n => String(n).padStart(2, '0'));
 }
 
-/**
- * Gera os 12 números fatorados para cada chave ABCDE, X1/X2 e ALE.
- */
 export function gerarJogosFatorados(grupos, x1, x2, aleatorios) {
   const [A, B, C, D, E] = grupos;
   const mapa = {};
@@ -56,23 +53,25 @@ export function gerarJogosFatorados(grupos, x1, x2, aleatorios) {
   };
 
   for (const chave of CHAVES) {
-    const nums = combinacoes[chave].flat();
-    mapa[chave] = [...new Set(nums.map(n => String(n).padStart(2, '0')))]
+    const nums = (combinacoes[chave] || []).flat();
+    mapa[chave] = [...new Set(nums.map(n => String(n).padStart(2, '0')).filter(Boolean))]
       .sort((a, b) => Number(a) - Number(b));
   }
 
   return mapa;
 }
 
-/**
- * Combina 12 números fatorados com 3 fixos (sem duplicar) e garante 15 únicos.
- */
 export function combinarComFixos(jogosFatorados, fixos5, base20) {
   const jogosFinais = {};
 
+  let fixos = base20.slice(0, 5);
+  if (Array.isArray(fixos5) && fixos5.length >= 3) {
+    fixos = fixos5;
+  }
+
   for (const chave in jogosFatorados) {
     const fatorado = jogosFatorados[chave].map(n => String(n).padStart(2, '0'));
-    const fixosSorteados = sortear(fixos5, 3).map(n => String(n).padStart(2, '0'));
+    const fixosSorteados = sortear(fixos, 3).map(n => String(n).padStart(2, '0'));
     const combinado = [...new Set([...fatorado, ...fixosSorteados])];
     jogosFinais[chave] = garantir15Unicos(combinado, base20);
   }
