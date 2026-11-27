@@ -24,13 +24,22 @@ function Balls({ nums, variant = '', max }) {
   );
 }
 
-function Card({ title, children, className = '' }) {
+function Card({ title, children, className = '', icon = '' }) {
   return (
     <div className={`card ${className}`}>
-      {title && <h2 className="section-title">{title}</h2>}
-      {children}
+      {title && (
+        <div className="card-header">
+          <span className="card-icon">{icon}</span>
+          <h2 className="section-title">{title}</h2>
+        </div>
+      )}
+      <div className="card-body">{children}</div>
     </div>
   );
+}
+
+function Badge({ children, type = 'default' }) {
+  return <span className={`badge badge-${type}`}>{children}</span>;
 }
 
 function GameRow({ chave, jogo, score, analise, comentarios, fixos5, isBest = false }) {
@@ -42,23 +51,41 @@ function GameRow({ chave, jogo, score, analise, comentarios, fixos5, isBest = fa
   return (
     <div className={`game-row ${isBest ? 'best' : ''}`}>
       <div className="game-header">
-        <div className="game-chave">{chave}</div>
-        <Balls nums={jogo} />
+        <div className="game-info">
+          <div className="game-chave">{chave}</div>
+          {isBest && <Badge type="gold">MELHOR</Badge>}
+        </div>
+        <Balls nums={jogo} variant={isBest ? 'ball-gold' : ''} />
         <div className="game-score">
           <span className="score-badge">{score.toFixed(1)}</span>
         </div>
       </div>
 
       <div className="game-metrics">
-        <span>Sequência: <strong>{analise.seq.maiorTamanho}</strong></span>
-        <span>Ímpar/Par: <strong>{analise.impares}/{analise.pares}</strong></span>
-        <span>Fixos: <strong>{fixosNoJogo}</strong></span>
-        <span>Azarões: <strong>{azaroesNoJogo}</strong></span>
-        <span className={`equilibrio ${analise.eq.status}`}>{analise.eq.label}</span>
+        <div className="metric">
+          <span className="metric-label">Sequência</span>
+          <span className="metric-value">{analise.seq.maiorTamanho}</span>
+        </div>
+        <div className="metric">
+          <span className="metric-label">Ímpar/Par</span>
+          <span className="metric-value">{analise.impares}/{analise.pares}</span>
+        </div>
+        <div className="metric">
+          <span className="metric-label">Fixos</span>
+          <span className="metric-value">{fixosNoJogo}</span>
+        </div>
+        <div className="metric">
+          <span className="metric-label">Azarões</span>
+          <span className="metric-value">{azaroesNoJogo}</span>
+        </div>
+        <div className="metric">
+          <span className="metric-label">Equilíbrio</span>
+          <span className={`metric-value equilibrio ${analise.eq.status}`}>{analise.eq.label}</span>
+        </div>
       </div>
 
       <button className="btn-link" onClick={() => setOpen(!open)}>
-        {open ? '▾ Ocultar análise osmAIr' : '▸ Ver análise osmAIr'}
+        {open ? '▾ Ocultar análise' : '▸ Ver análise do motor'}
       </button>
 
       {open && (
@@ -90,6 +117,7 @@ export default function App() {
 
   function carregarExemplo() {
     setBd(EXEMPLO);
+    setErro(null);
   }
 
   async function carregarAPI() {
@@ -113,6 +141,7 @@ export default function App() {
       try {
         const json = JSON.parse(ev.target.result);
         setBd(json);
+        setErro(null);
       } catch {
         setErro('Arquivo JSON inválido.');
       }
@@ -137,25 +166,27 @@ export default function App() {
   const r = useMemo(() => {
     if (!bd) return null;
     return processar(bd, meuJogo.length === 15 ? meuJogo : null);
-  }, [bd]);
+  }, [bd, meuJogo.length === 15 ? meuJogo.join(',') : '']);
 
   if (!r) {
     return (
       <div className="container">
-        <div className="card">
-          <h1 className="title">🎯 Lotofácil - Motor ABCDE</h1>
-          <p className="subtitle">Carregue os dados para iniciar.</p>
-          <div className="actions">
-            <button className="btn" onClick={carregarExemplo}>Dados de exemplo</button>
-            <button className="btn" onClick={carregarAPI} disabled={carregando}>
-              {carregando ? 'Carregando...' : 'Carregar da API'}
-            </button>
-            <label className="btn">
-              Upload JSON
-              <input type="file" accept=".json" hidden onChange={carregarArquivo} />
-            </label>
+        <div className="hero">
+          <div className="hero-content">
+            <h1 className="title">🎯 Lotofácil Motor ABCDE</h1>
+            <p className="subtitle">Análise estatística inteligente para seus jogos</p>
+            <div className="actions">
+              <button className="btn btn-primary" onClick={carregarExemplo}>Dados de exemplo</button>
+              <button className="btn" onClick={carregarAPI} disabled={carregando}>
+                {carregando ? 'Carregando...' : 'Carregar da API'}
+              </button>
+              <label className="btn">
+                Upload JSON
+                <input type="file" accept=".json" hidden onChange={carregarArquivo} />
+              </label>
+            </div>
+            {erro && <div className="alert alert-error" style={{ marginTop: 24 }}>{erro}</div>}
           </div>
-          {erro && <div className="alert" style={{ marginTop: 16 }}>{erro}</div>}
         </div>
       </div>
     );
@@ -174,53 +205,64 @@ export default function App() {
 
   return (
     <div className="container">
-      <div className="card header">
-        <h1 className="title">🎯 Lotofácil - Motor ABCDE</h1>
-        <div className="actions">
-          <button className="btn" onClick={carregarExemplo}>Exemplo</button>
-          <button className="btn" onClick={carregarAPI} disabled={carregando}>
-            {carregando ? '...' : 'API'}
-          </button>
-          <label className="btn">
-            Upload
-            <input type="file" accept=".json" hidden onChange={carregarArquivo} />
-          </label>
+      <header className="header">
+        <div className="header-content">
+          <div>
+            <h1 className="title">🎯 Lotofácil Motor ABCDE</h1>
+            <p className="subtitle">Análise estatística inteligente para seus jogos</p>
+          </div>
+          <div className="actions">
+            <button className="btn btn-sm" onClick={carregarExemplo}>Exemplo</button>
+            <button className="btn btn-sm" onClick={carregarAPI} disabled={carregando}>
+              {carregando ? '...' : 'API'}
+            </button>
+            <label className="btn btn-sm">
+              Upload
+              <input type="file" accept=".json" hidden onChange={carregarArquivo} />
+            </label>
+          </div>
         </div>
-      </div>
+      </header>
 
-      {erro && <div className="alert">{erro}</div>}
+      {erro && <div className="alert alert-error">{erro}</div>}
 
       <div className="top-grid">
-        <Card title="📊 Estatísticas">
+        <Card title="Estatísticas" icon="📊">
           <div className="stats-row">
-            <div>
+            <div className="stat-block">
               <div className="label">Top 10 - Últimos 10 concursos</div>
               <Balls nums={r.top10Curto} variant="ball-hot" />
             </div>
-            <div>
+            <div className="stat-block">
               <div className="label">Top 10 - Todos os tempos</div>
               <Balls nums={r.top10Longo} variant="ball-gold" />
             </div>
           </div>
         </Card>
 
-        <Card title="⚖️ Quentes x Azarões">
-          <div className="label">3 Fixos Principais</div>
-          <Balls nums={r.tresMais} variant="ball-hot" />
-          <div className="label" style={{ marginTop: 12 }}>2 Azarões</div>
-          <Balls nums={r.doisMenos} variant="ball-cold" />
+        <Card title="Quentes x Azarões" icon="⚖️">
+          <div className="hot-cold">
+            <div className="hot-cold-block">
+              <div className="label label-hot">3 Fixos Principais</div>
+              <Balls nums={r.tresMais} variant="ball-hot" />
+            </div>
+            <div className="hot-cold-block">
+              <div className="label label-cold">2 Azarões</div>
+              <Balls nums={r.doisMenos} variant="ball-cold" />
+            </div>
+          </div>
         </Card>
       </div>
 
       <div className="main-grid">
-        <Card title="🧩 Base 20 - Grupos ABCDE">
+        <Card title="Base 20 - Grupos ABCDE" icon="🧩">
           <div className="base-grid">
             {r.grupos.map((grupo, i) => (
               <div key={`grupo-${i}`} className="base-col">
                 <div className="base-title">Grupo {String.fromCharCode(65 + i)}</div>
                 <div className="base-square">
                   {grupo.map(n => (
-                    <span key={`g${i}-${n}`} className="ball">{n}</span>
+                    <span key={`g${i}-${n}`} className="ball ball-base">{n}</span>
                   ))}
                 </div>
               </div>
@@ -228,7 +270,7 @@ export default function App() {
           </div>
         </Card>
 
-        <Card title="🍀 Meu Jogo da Sorte">
+        <Card title="Meu Jogo da Sorte" icon="🍀">
           <div className="number-picker">
             {NUMEROS.map(n => {
               const selecionado = meuJogo.includes(n);
@@ -243,11 +285,13 @@ export default function App() {
               );
             })}
           </div>
-          <div className="label">Selecionados ({meuJogo.length}/15)</div>
-          <Balls nums={meuJogo} variant="ball-user" />
-          <div className="actions" style={{ marginTop: 12 }}>
+          <div className="selected-info">
+            <div className="label">Selecionados ({meuJogo.length}/15)</div>
+            <Balls nums={meuJogo} variant="ball-user" />
+          </div>
+          <div className="actions picker-actions">
             <button
-              className="btn"
+              className="btn btn-primary"
               onClick={analisarMeuJogo}
               disabled={meuJogo.length !== 15}
             >
@@ -264,8 +308,8 @@ export default function App() {
               <div className="success">
                 <strong>{resultado.analiseUsuario.score.toFixed(1)}</strong> pontos
                 {resultado.analiseUsuario.ajuste && (
-                  <div style={{ marginTop: 8, fontSize: 12 }}>
-                    Ajustado: removeu {resultado.analiseUsuario.ajuste.removido}, adicionou {resultado.analiseUsuario.ajuste.adicionado}
+                  <div className="ajuste-info">
+                    Ajuste sugerido: removeu {resultado.analiseUsuario.ajuste.removido}, adicionou {resultado.analiseUsuario.ajuste.adicionado}
                   </div>
                 )}
               </div>
@@ -274,9 +318,9 @@ export default function App() {
         </Card>
       </div>
 
-      <Card title="🏆 Melhor Jogo do Motor" className="best-game">
+      <Card title="Melhor Jogo do Motor" className="best-game" icon="🏆">
         <div className="best-game-row">
-          <div>
+          <div className="best-chave-box">
             <div className="label">Chave vencedora</div>
             <div className="best-chave">{r.melhorChave}</div>
           </div>
@@ -295,7 +339,7 @@ export default function App() {
         )}
       </Card>
 
-      <Card>
+      <Card icon="🎲">
         <div className="tabs">
           <button className={`tab ${abaAtiva === 'finais' ? 'active' : ''}`} onClick={() => setAbaAtiva('finais')}>
             Jogos Finais
@@ -326,79 +370,96 @@ export default function App() {
           )}
 
           {abaAtiva === 'fatorados' && (
-            <table>
-              <thead>
-                <tr>
-                  <th>Chave</th>
-                  <th>12 números</th>
-                </tr>
-              </thead>
-              <tbody>
-                {Object.entries(r.jogosFatorados).map(([chave, nums]) => (
-                  <tr key={`fat-${chave}`}>
-                    <td>{chave}</td>
-                    <td><Balls nums={nums} /></td>
+            <div className="table-wrapper">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Chave</th>
+                    <th>12 números</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {Object.entries(r.jogosFatorados).map(([chave, nums]) => (
+                    <tr key={`fat-${chave}`}>
+                      <td><span className="chave-tag">{chave}</span></td>
+                      <td><Balls nums={nums} variant="ball-base" /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
 
           {abaAtiva === 'ranking' && (
-            <table>
-              <thead>
-                <tr>
-                  <th>Pos</th>
-                  <th>Chave</th>
-                  <th>Jogo</th>
-                  <th>Score</th>
-                  <th>Sequência</th>
-                  <th>Equilíbrio</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rankingFinais.map((item, i) => (
-                  <tr key={`rank-${item.chave}`} className={i === 0 ? 'highlight' : ''}>
-                    <td>{i + 1}</td>
-                    <td>{item.chave}</td>
-                    <td><Balls nums={item.jogo} /></td>
-                    <td>{item.score.toFixed(1)}</td>
-                    <td>{item.analise.seq.maiorTamanho}</td>
-                    <td>{item.analise.eq.label}</td>
+            <div className="table-wrapper">
+              <table className="data-table ranking-table">
+                <thead>
+                  <tr>
+                    <th>Pos</th>
+                    <th>Chave</th>
+                    <th>Jogo</th>
+                    <th>Score</th>
+                    <th>Seq</th>
+                    <th>Equilíbrio</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {rankingFinais.map((item, i) => (
+                    <tr key={`rank-${item.chave}`} className={i === 0 ? 'highlight' : ''}>
+                      <td>{i + 1}</td>
+                      <td><span className="chave-tag">{item.chave}</span></td>
+                      <td><Balls nums={item.jogo} variant={i === 0 ? 'ball-gold' : ''} /></td>
+                      <td><span className="score-cell">{item.score.toFixed(1)}</span></td>
+                      <td>{item.analise.seq.maiorTamanho}</td>
+                      <td><span className={`eq-tag ${item.analise.eq.status}`}>{item.analise.eq.label}</span></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </Card>
 
-      <Card title="🧪 Simulação Histórica">
+      <Card title="Simulação Histórica" icon="🧪">
         <p className="subtitle">
           Simulação do melhor jogo gerado pelo motor contra os últimos 200 concursos.
         </p>
-        <table>
-          <thead>
-            <tr>
-              <th>Acertos</th>
-              <th>Quantidade</th>
-              <th>Frequência</th>
-            </tr>
-          </thead>
-          <tbody>
-            {Object.entries(r.resultadoSimulacao.detalhes || {}).map(([acertos, qtd]) => (
-              <tr key={`sim-${acertos}`}>
-                <td>{acertos}</td>
-                <td>{qtd}</td>
-                <td>{((qtd / (r.resultadoSimulacao.total || 1)) * 100).toFixed(1)}%</td>
+        <div className="table-wrapper">
+          <table className="data-table sim-table">
+            <thead>
+              <tr>
+                <th>Acertos</th>
+                <th>Quantidade</th>
+                <th>Frequência</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-        <div className="info" style={{ marginTop: 12 }}>
+            </thead>
+            <tbody>
+              {Object.entries(r.resultadoSimulacao.detalhes || {}).map(([acertos, qtd]) => (
+                <tr key={`sim-${acertos}`}>
+                  <td>{acertos}</td>
+                  <td>{qtd}</td>
+                  <td>
+                    <div className="freq-bar">
+                      <span className="freq-value">{((qtd / (r.resultadoSimulacao.total || 1)) * 100).toFixed(1)}%</span>
+                      <div className="freq-track">
+                        <div className="freq-fill" style={{ width: `${((qtd / (r.resultadoSimulacao.total || 1)) * 100)}%` }}></div>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="info-box">
           Máximo de acertos do melhor jogo: <strong>{r.resultadoSimulacao.maximo || 0}</strong>
         </div>
       </Card>
+
+      <footer className="footer">
+        <p>Lotofácil Motor ABCDE — Desenvolvido por Osmair com IA</p>
+      </footer>
     </div>
   );
 }
